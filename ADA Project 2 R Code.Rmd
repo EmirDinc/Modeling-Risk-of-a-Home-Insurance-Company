@@ -1,0 +1,293 @@
+---
+title: "ADA Project"
+output: html_document
+---
+
+```{r}
+library(plyr)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(readr)
+General_Analytics_Claims <- read_csv("Desktop/Second_project/General_Analytics_Claims.csv")
+General_Analytics_Policies <- read_csv("Second_project/General_Analytics_Policies.csv")
+```
+
+#correlated factors
+```{r}
+chisq.test(General_Analytics_Policies$county,General_Analytics_Policies$construction_year)
+chisq.test(General_Analytics_Policies$construction_type,General_Analytics_Policies$house_value)
+chisq.test(General_Analytics_Policies$roof_type,General_Analytics_Policies$public_protection_class)
+chisq.test(General_Analytics_Policies$construction_year,General_Analytics_Policies$square_footage)
+chisq.test(General_Analytics_Policies$public_protection_class,General_Analytics_Policies$house_value)
+
+RTxPPC<-table(General_Analytics_Policies$roof_type,General_Analytics_Policies$public_protection_class)
+RTxPPC <- RTxPPC[,c(1,3:10,2)]
+mosaicplot(RTxPPC,shade = TRUE, las=2, xlab="Roof Type", ylab="Public Protection Class")
+
+HVxPPC<-table(General_Analytics_Policies$house_value,General_Analytics_Policies$public_protection_class)
+HVxPPC <- HVxPPC[,c(1,3:10,2)]
+HVxPPC <- HVxPPC[c(5,3,4,1,2),]
+mosaicplot(HVxPPC,shade = TRUE, las=2, xlab="House Value", ylab="Public Protection Class")
+```
+
+#pricing factors
+```{r}
+task3 <- merge(General_Analytics_Policies,General_Analytics_Claims, by = "policy_number",all.x=TRUE)
+task3[is.na(task3)] <- 0
+
+task3_agency <- aggregate(claim_amount ~ agency, data = task3, sum)
+task3_agency$claim_count <- unlist(table(task3$agency))
+task3_agency$total_exposure <- unlist(table(General_Analytics_Policies$agency))
+task3_agency$claim_frequency <- task3_agency$claim_count/task3_agency$total_exposure
+task3_agency$claim_severity <- task3_agency$claim_amount/task3_agency$claim_count
+barplot(task3_agency$claim_frequency, names.arg = task3_agency$agency, 
+        main="Claim Frequency by Agency",xlab="Agency",
+        ylab="Claim Frequency")
+text(bar, 0, labels=round(task3_agency$claim_frequency,digits=4),cex=1,pos=3) 
+barplot(task3_agency$claim_severity, names.arg = task3_agency$agency, 
+        main="Claim Severity by Agency",xlab="Agency",
+        ylab="Claim Severity")
+text(bar, 0, labels=round(task3_agency$claim_severity,digits=0),cex=1,pos=3) 
+
+task3_county <- aggregate(claim_amount ~ county, data = task3, sum)
+task3_county$claim_count <- unlist(table(task3$county))
+task3_county$total_exposure <- unlist(table(General_Analytics_Policies$county))
+task3_county$claim_frequency <- task3_county$claim_count/task3_county$total_exposure
+task3_county$claim_severity <- task3_county$claim_amount/task3_county$claim_count
+barplot(task3_county$claim_frequency, names.arg = task3_county$county, 
+        main="Claim Frequency by County",xlab="County",
+        ylab="Claim Frequency")
+text(bar, 0, labels=round(task3_county$claim_frequency,digits=4),cex=1,pos=3) 
+barplot(task3_county$claim_severity, names.arg = task3_county$county, 
+        main="Claim Severity by County",xlab="County",
+        ylab="Claim Severity")
+options(scipen=999)
+text(bar, 0, labels=round(task3_county$claim_severity,digits=0),cex=1,pos=3) 
+
+task3_ct <- aggregate(claim_amount ~ construction_type, data = task3, sum)
+task3_ct$claim_count <- unlist(table(task3$construction_type))
+task3_ct$total_exposure <- unlist(table(General_Analytics_Policies$construction_type))
+task3_ct$claim_frequency <- task3_ct$claim_count/task3_ct$total_exposure
+task3_ct$claim_severity <- task3_ct$claim_amount/task3_ct$claim_count
+barplot(task3_ct$claim_frequency, names.arg = task3_ct$construction_type, 
+        main="Claim Frequency by Construction Type",xlab="Construction Type",
+        ylab="Claim Frequency")
+text(bar, 0, labels=round(task3_ct$claim_frequency,digits=4),cex=1,pos=3) 
+barplot(task3_ct$claim_severity, names.arg = task3_ct$construction_type, 
+        main="Claim Severity by Construction Type",xlab="Construction Type",
+        ylab="Claim Severity")
+options(scipen=999)
+text(bar, 0, labels=round(task3_ct$claim_severity,digits=0),cex=1,pos=3) 
+
+task3_rt <- aggregate(claim_amount ~ roof_type, data = task3, sum)
+task3_rt$claim_count <- unlist(count(task3,"roof_type")[2])
+task3_rt$total_exposure <- unlist(count(General_Analytics_Policies,"roof_type")[2])
+task3_rt$claim_frequency <- task3_rt$claim_count/task3_rt$total_exposure
+task3_rt$claim_severity <- task3_rt$claim_amount/task3_rt$claim_count
+barplot(task3_rt$claim_frequency, names.arg = task3_rt$roof_type, 
+        main="Claim Frequency by Roof Type",xlab="Roof Type",
+        ylab="Claim Frequency")
+text(bar, 0, labels=round(task3_rt$claim_frequency,digits=4),cex=1,pos=3) 
+barplot(task3_rt$claim_severity, names.arg = task3_rt$roof_type, 
+        main="Claim Severity by Roof Type",xlab="Roof Type",
+        ylab="Claim Severity")
+options(scipen=999)
+text(bar, 0, labels=round(task3_rt$claim_severity,digits=0),cex=1,pos=3) 
+
+task3_cy <- aggregate(claim_amount ~ construction_year, data = task3, sum)
+task3_cy$claim_count <- unlist(table(task3$construction_year))
+task3_cy$total_exposure <- unlist(table(General_Analytics_Policies$construction_year))
+task3_cy$claim_frequency <- task3_cy$claim_count/task3_cy$total_exposure
+task3_cy$claim_severity <- task3_cy$claim_amount/task3_cy$claim_count
+barplot(task3_cy$claim_frequency, names.arg = task3_cy$construction_year, 
+        main="Claim Frequency by Construction Year",xlab="Construction Year",
+        ylab="Claim Frequency")
+text(bar, 0, labels=round(task3_cy$claim_frequency,digits=4),cex=1,pos=3) 
+barplot(task3_cy$claim_severity, names.arg = task3_cy$construction_year, 
+        main="Claim Severity by Construction Year",xlab="Construction Year",
+        ylab="Claim Severity")
+options(scipen=999)
+text(bar, 0, labels=round(task3_cy$claim_severity,digits=0),cex=1,pos=3)
+
+task3_sf <- aggregate(claim_amount ~ square_footage, data = task3, sum)
+task3_sf$order <- c(4,1,2,3)
+task3_sf <- arrange(task3_sf,order)
+task3_sf$claim_count <- unlist(table(task3$square_footage))
+task3_sf$total_exposure <- unlist(table(General_Analytics_Policies$square_footage))
+task3_sf$claim_frequency <- task3_sf$claim_count/task3_sf$total_exposure
+task3_sf$claim_severity <- task3_sf$claim_amount/task3_sf$claim_count
+barplot(task3_sf$claim_frequency, names.arg = task3_sf$square_footage, 
+        main="Claim Frequency by Square Footage",xlab="Square Footage",
+        ylab="Claim Frequency")
+text(bar, 0, labels=round(task3_sf$claim_frequency,digits=4),cex=1,pos=3) 
+barplot(task3_sf$claim_severity, names.arg = task3_sf$square_footage, 
+        main="Claim Severity by Square Footage",xlab="Square Footage",
+        ylab="Claim Severity")
+options(scipen=999)
+text(bar, 0, labels=round(task3_sf$claim_severity,digits=0),cex=1,pos=3) 
+
+task3_ppc <- aggregate(claim_amount ~ public_protection_class, data = task3, sum)
+task3_ppc$claim_count <- unlist(table(task3$public_protection_class))
+task3_ppc$total_exposure <- unlist(table(General_Analytics_Policies$public_protection_class))
+task3_ppc$claim_frequency <- task3_ppc$claim_count/task3_ppc$total_exposure
+task3_ppc$claim_severity <- task3_ppc$claim_amount/task3_ppc$claim_count
+barplot(task3_ppc$claim_frequency, names.arg = task3_ppc$public_protection_class, 
+        main="Claim Frequency by Public Protection Class",xlab="Public Protection Class",
+        ylab="Claim Frequency")
+text(bar, 0, labels=round(task3_ppc$claim_frequency,digits=4),cex=1,pos=3) 
+barplot(task3_ppc$claim_severity, names.arg = task3_ppc$public_protection_class, 
+        main="Claim Severity by Public Protection Class",xlab="Public Protection Class",
+        ylab="Claim Severity")
+options(scipen=999)
+text(bar, 0, labels=round(task3_ppc$claim_severity,digits=0),cex=1,pos=3)
+
+task3_hv <- aggregate(claim_amount ~ house_value, data = task3, sum)
+task3_hv$order <- c(4,5,2,3,1)
+task3_hv <- arrange(task3_hv,order)
+task3_hv$claim_count <- unlist(table(task3$house_value))
+task3_hv$total_exposure <- unlist(table(General_Analytics_Policies$house_value))
+task3_hv$claim_frequency <- task3_hv$claim_count/task3_hv$total_exposure
+task3_hv$claim_severity <- task3_hv$claim_amount/task3_hv$claim_count
+barplot(task3_hv$claim_frequency, names.arg = task3_hv$house_value, 
+        main="Claim Frequency by House Value",xlab="House Value",
+        ylab="Claim Frequency")
+text(bar, 0, labels=round(task3_hv$claim_frequency,digits=4),cex=1,pos=3) 
+barplot(task3_hv$claim_severity, names.arg = task3_hv$house_value, 
+        main="Claim Severity by House Value",xlab="House Value",
+        ylab="Claim Severity")
+options(scipen=999)
+text(bar, 0, labels=round(task3_hv$claim_severity,digits=0),cex=1,pos=3)
+```
+
+#generalized linear regressions
+```{r}
+claim_count <- as.data.frame(table(General_Analytics_Claims$policy_number))
+colnames(claim_count) <- c("policy_number","claim_count")
+task3_2 <- merge(General_Analytics_Policies,claim_count, by = "policy_number",all.x=TRUE)
+task3_2[is.na(task3_2)] <- 0
+task3_3 <- merge(General_Analytics_Claims,General_Analytics_Policies, by = "policy_number",all.x=TRUE)
+
+glmF_agency <- glm(claim_count ~ factor(agency),data=task3_2, family=poisson)
+summary(glmF_agency)
+glmS_agency <- glm(claim_amount ~ factor(agency),data=task3_3, family=Gamma(link="log"))
+summary(glmS_agency)
+
+glmF_county <- glm(claim_count ~ factor(county),data=task3_2, family=poisson)
+summary(glmF_county)
+glmS_county <- glm(claim_amount ~ factor(county),data=task3_3, family=Gamma(link="log"))
+summary(glmS_county)
+
+glmF_ct <- glm(claim_count ~ factor(construction_type),data=task3_2, family=poisson)
+summary(glmF_ct)
+glmS_ct <- glm(claim_amount ~ factor(construction_type),data=task3_3, family=Gamma(link="log"))
+summary(glmS_ct)
+
+glmF_rt <- glm(claim_count ~ factor(roof_type),data=task3_2, family=poisson)
+summary(glmF_rt)
+glmS_rt <- glm(claim_amount ~ factor(roof_type),data=task3_3, family=Gamma(link="log"))
+summary(glmS_rt)
+
+glmF_cy <- glm(claim_count ~ factor(construction_year),data=task3_2, family=poisson)
+summary(glmF_cy)
+glmS_cy <- glm(claim_amount ~ factor(construction_year),data=task3_3, family=Gamma(link="log"))
+summary(glmS_cy)
+
+glmF_sf <- glm(claim_count ~ factor(square_footage),data=task3_2, family=poisson)
+summary(glmF_sf)
+glmS_sf <- glm(claim_amount ~ factor(square_footage),data=task3_3, family=Gamma(link="log"))
+summary(glmS_sf)
+
+glmF_ppc <- glm(claim_count ~ factor(public_protection_class),data=task3_2, family=poisson)
+summary(glmF_ppc)
+glmS_ppc <- glm(claim_amount ~ factor(public_protection_class),data=task3_3, family=Gamma(link="log"))
+summary(glmS_ppc)
+
+glmF_hv <- glm(claim_count ~ factor(house_value),data=task3_2, family=poisson)
+summary(glmF_hv)
+glmS_hv <- glm(claim_amount ~ factor(house_value),data=task3_3, family=Gamma(link="log"))
+summary(glmS_hv)
+
+mosaicplot(table(General_Analytics_Policies$county,General_Analytics_Policies$construction_type),
+           shade = TRUE, las=2, xlab="County", ylab="Construction Type")
+```
+
+#rate relativites
+```{r}
+task3_county$frequency_rates <- task3_county$claim_frequency/task3_county[8,"claim_frequency"]
+task3_county$severity_rates <- task3_county$claim_severity/task3_county[8,"claim_severity"]
+task3_county$pure_premium_rates <- task3_county$frequency_rates*task3_county$severity_rates
+
+task3_ct$frequency_rates <- task3_ct$claim_frequency/task3_ct[2,"claim_frequency"]
+task3_ct$severity_rates <- task3_ct$claim_severity/task3_ct[2,"claim_severity"]
+task3_ct$pure_premium_rates <- task3_ct$frequency_rates*task3_ct$severity_rates
+
+task3_hv$frequency_rates <- task3_hv$claim_frequency/task3_hv[2,"claim_frequency"]
+task3_hv$severity_rates <- task3_hv$claim_severity/task3_hv[2,"claim_severity"]
+task3_hv$pure_premium_rates <- task3_hv$frequency_rates*task3_hv$severity_rates
+
+countyXct <- as.data.frame(table(task3$county,task3$construction_type))
+colnames(countyXct) <- c("county","construction_type","claim_count")
+countyXct$cat <- paste(countyXct$county,countyXct$construction_type)
+countyXct_exposure <- as.data.frame(table(General_Analytics_Policies$county,
+                                          General_Analytics_Policies$construction_type))
+colnames(countyXct_exposure) <- c("county","construction_type","total_exposure")
+countyXct_exposure$cat <- paste(countyXct$county,countyXct$construction_type)
+countyXct <- merge(countyXct,countyXct_exposure, by = "cat",all.x=TRUE)
+countyXct_amount <- aggregate(claim_amount ~ county + construction_type, data = task3, sum)
+colnames(countyXct_amount) <- c("county","construction_type","claim_amount")
+countyXct_amount$cat <- paste(countyXct_amount$county,countyXct_amount$construction_type)
+countyXct <- merge(countyXct,countyXct_amount, by = "cat",all.x=TRUE)
+
+countyXct$claim_frequency <- countyXct$claim_count/countyXct$total_exposure
+countyXct$claim_severity <- countyXct$claim_amount/countyXct$claim_count
+countyXct$frequency_rates <- countyXct$claim_frequency/countyXct[23,"claim_frequency"]
+countyXct$severity_rates <- countyXct$claim_severity/countyXct[23,"claim_severity"]
+countyXct$pure_premium_rates <- countyXct$frequency_rates*countyXct$severity_rates
+
+stargazer(glmF_county,title = "County VS Claim Frequency",
+          type = "text", omit.stat=c("LL","ser","f","adj.rsq"), out="3f.txt")
+```
+
+# catastrophe risk analysis
+```{r}
+claim_year <- substr(General_Analytics_Claims$claim_date,
+              nchar(General_Analytics_Claims$claim_date)-3,
+              nchar(General_Analytics_Claims$claim_date))
+data <- cbind(General_Analytics_Claims,claim_year)
+task2 <- aggregate(claim_amount ~ claim_year, data = data, sum)
+task2$claim_count <- unlist(table(data$claim_year))
+task2$claim_severity <- task2$claim_amount/task2$claim_count
+barplot(task2$claim_severity, names.arg = task2$claim_year, 
+        main="Claim Severity by Year",xlab="Year",
+        ylab="Claim Severity")
+text(bar, 0, labels=round(task2$claim_severity,digits=0),cex=1,pos=3) 
+
+General_Analytics_Claims$claim_date <- mdy(General_Analytics_Claims$claim_date)
+task2 <- aggregate(claim_amount ~ claim_date, data = data, sum)
+ggplot(task2, aes(x=claim_date, y=claim_amount)) + geom_smooth() +
+  ggtitle("Claim Severity by Date") + xlab("Date") + ylab("Claim Severity")
+
+Claims_2017 <- subset(General_Analytics_Claims, year(mdy(claim_date))==2017)
+Policies_2017 <- merge(Claims_2017,General_Analytics_Policies, by = "policy_number",all.x=TRUE)
+
+glmS_agency_2017 <- glm(claim_amount ~ factor(agency),data=Policies_2017, family=Gamma(link="log"))
+summary(glmS_agency_2017)
+glmS_county_2017 <- glm(claim_amount ~ factor(county),data=Policies_2017, family=Gamma(link="log"))
+summary(glmS_county_2017)
+glmS_ct_2017 <- glm(claim_amount ~ factor(construction_type),data=Policies_2017, family=Gamma(link="log"))
+summary(glmS_ct_2017)
+glmS_rt_2017 <- glm(claim_amount ~ factor(roof_type),data=Policies_2017, family=Gamma(link="log"))
+summary(glmS_rt_2017)
+glmS_cy_2017 <- glm(claim_amount ~ factor(construction_year),data=Policies_2017, family=Gamma(link="log"))
+summary(glmS_cy_2017)
+glmS_sf_2017 <- glm(claim_amount ~ factor(square_footage),data=Policies_2017, family=Gamma(link="log"))
+summary(glmS_sf_2017)
+glmS_ppc_2017 <- glm(claim_amount ~ factor(public_protection_class),data=Policies_2017, family=Gamma(link="log"))
+summary(glmS_ppc_2017)
+glmS_hv_2017 <- glm(claim_amount ~ factor(house_value),data=Policies_2017, family=Gamma(link="log"))
+summary(glmS_hv_2017)
+
+Claims_x2017 <- subset(General_Analytics_Claims, year(mdy(claim_date))!=2017)
+Policies_x2017 <- merge(Claims_x2017,General_Analytics_Policies, by = "policy_number",all.x=TRUE)
+```
